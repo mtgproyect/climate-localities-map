@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "localities_url": "https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json",
+  "observations_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json",
+  "observations_manifest_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/manifiesto.json",
+  "refresh_interval_ms": 600000,
+  "stale_after_minutes": 90,
+  "initial_view": {
+    "center": [
+      -38.5,
+      -64.5
+    ],
+    "zoom_desktop": 4,
+    "zoom_mobile": 3
+  },
+  "station_aliases": {
+    "87412": "87420",
+    "87470": "87360",
+    "87683": "87637"
+  },
+  "locality_display_aliases": {
+    "4864": "Ciudad Autónoma de Buenos Aires (CABA)"
+  },
+  "source_strategy": "Archivos JSON públicos leídos directamente desde la rama main para no depender de que GitHub Pages esté habilitado en los repositorios de datos."
+}
