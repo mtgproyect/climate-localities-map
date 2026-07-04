@@ -419,38 +419,89 @@
     return "unknown";
   }
 
-  function getObservationDate(record) {
-    const value = record?.payload?.date || record?.fetched_at;
-    if (!value) return null;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date;
+  function dayOfYearUtc(date) {
+    const start = Date.UTC(date.getUTCFullYear(), 0, 0);
+    const current = Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate()
+    );
+    return Math.floor((current - start) / 86400000);
   }
 
-  function isNightObservation(record) {
-    const date = getObservationDate(record);
-    if (!date) return false;
+  function solarElevationDegrees(lat, lon, date = new Date()) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return 90;
 
-    try {
-      const hourText = new Intl.DateTimeFormat("en-GB", {
-        timeZone: state.config?.time_zone || "America/Argentina/Buenos_Aires",
-        hour: "2-digit",
-        hour12: false,
-      }).format(date);
+    const radians = Math.PI / 180;
+    const day = dayOfYearUtc(date);
+    const utcMinutes =
+      date.getUTCHours() * 60 +
+      date.getUTCMinutes() +
+      date.getUTCSeconds() / 60;
 
-      const hour = Number(hourText);
-      return Number.isFinite(hour) ? hour < 7 || hour >= 19 : false;
-    } catch (error) {
-      const fallbackHour = (date.getUTCHours() - 3 + 24) % 24;
-      return fallbackHour < 7 || fallbackHour >= 19;
-    }
+    const fractionalHour = utcMinutes / 60;
+    const gamma =
+      (2 * Math.PI / 365) *
+      (day - 1 + (fractionalHour - 12) / 24);
+
+    const equationOfTime =
+      229.18 *
+      (
+        0.000075 +
+        0.001868 * Math.cos(gamma) -
+        0.032077 * Math.sin(gamma) -
+        0.014615 * Math.cos(2 * gamma) -
+        0.040849 * Math.sin(2 * gamma)
+      );
+
+    const solarDeclination =
+      0.006918 -
+      0.399912 * Math.cos(gamma) +
+      0.070257 * Math.sin(gamma) -
+      0.006758 * Math.cos(2 * gamma) +
+      0.000907 * Math.sin(2 * gamma) -
+      0.002697 * Math.cos(3 * gamma) +
+      0.00148 * Math.sin(3 * gamma);
+
+    let trueSolarMinutes = utcMinutes + equationOfTime + 4 * lon;
+    trueSolarMinutes =
+      ((trueSolarMinutes % 1440) + 1440) % 1440;
+
+    let hourAngle = trueSolarMinutes / 4 - 180;
+    if (hourAngle < -180) hourAngle += 360;
+
+    const latitudeRadians = lat * radians;
+    const hourAngleRadians = hourAngle * radians;
+
+    const cosineZenith =
+      Math.sin(latitudeRadians) * Math.sin(solarDeclination) +
+      Math.cos(latitudeRadians) *
+        Math.cos(solarDeclination) *
+        Math.cos(hourAngleRadians);
+
+    const boundedCosine = Math.max(-1, Math.min(1, cosineZenith));
+    const elevation =
+      90 - Math.acos(boundedCosine) / radians;
+
+    return elevation;
+  }
+
+  function isNightAtLocality(locality) {
+    const lat = Number(locality?.lat);
+    const lon = Number(locality?.lon);
+
+    // El umbral de -0,833° contempla el borde aparente del Sol
+    // y la refracción atmosférica utilizada para salida/puesta.
+    return solarElevationDegrees(lat, lon, new Date()) < -0.833;
   }
 
   function getVisualCategory(locality, record) {
     const category = classifyWeather(record);
-    const visualCategory = getVisualCategory(locality, record);
-    if (category === "clear" && isNightObservation(record)) {
+
+    if (category === "clear" && isNightAtLocality(locality)) {
       return "clear-night";
     }
+
     return category;
   }
 
@@ -514,6 +565,7 @@
     const record = observationForLocality(locality);
     const payload = record?.payload || null;
     const category = classifyWeather(record);
+    const visualCategory = getVisualCategory(locality, record);
     const fresh = isObservationFresh(record);
     const description =
       payload?.weather?.description || "Sin observación disponible";
@@ -947,7 +999,7 @@
 
     for (const locality of matches) {
       const record = observationForLocality(locality);
-      const category = classifyWeather(record);
+      const visualCategory = getVisualCategory(locality, record);
       const temperature = Number(record?.payload?.temperature);
       const button = document.createElement("button");
       button.className = "search-result";
