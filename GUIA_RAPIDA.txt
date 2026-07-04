@@ -1,0 +1,36 @@
+CLIMATE LOCALITIES MAP — GUÍA RÁPIDA
+
+NOMBRE DEL REPOSITORIO
+climate-localities-map
+
+DESCRIPCIÓN
+Mapa meteorológico nacional de 10.601 localidades argentinas con iconos de
+condiciones actuales y observaciones de las 121 estaciones operativas de
+ClimateProyectar.
+
+CREACIÓN
+1. Crear un repositorio público vacío:
+   mtgproyect/climate-localities-map
+2. No agregar README, .gitignore ni licencia desde GitHub.
+3. Descomprimir climate-localities-map.zip.
+4. Subir todo el contenido interior de la carpeta climate-localities-map.
+
+GITHUB PAGES
+5. Settings → Pages → Source → GitHub Actions.
+
+PRIMERA PUBLICACIÓN
+6. Actions → Deploy localities weather map → Run workflow.
+7. Esperar que ambas etapas terminen en verde.
+8. Abrir:
+   https://mtgproyect.github.io/climate-localities-map/
+
+ACTUALIZACIONES
+El mapa consume directamente:
+- climateproyectar-v2/data/localidades.min.json
+- climate-observations/estaciones.min.json
+
+No necesita un cronjob propio para actualizar observaciones.
+El navegador revisa datos nuevos cada 10 minutos.
+
+El workflow solo usa workflow_dispatch y puede activarse desde cron-job.org
+cuando se modifique el frontend.
