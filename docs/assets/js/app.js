@@ -6,11 +6,56 @@
   const FALLBACK_OBSERVATIONS_URL =
     "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json";
 
+  const CLEAN_BASE_PROVINCES_URL =
+    "https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson";
+
+  const CLEAN_BASE_CITIES = [
+    { label: "Buenos Aires", names: ["Capital Federal", "Ciudad Autónoma de Buenos Aires (CABA)"], rank: 1 },
+    { label: "Córdoba", names: ["Córdoba"], provinces: ["Córdoba"], rank: 1 },
+    { label: "Rosario", names: ["Rosario"], provinces: ["Santa Fe"], rank: 1 },
+    { label: "Mendoza", names: ["Mendoza"], provinces: ["Mendoza"], rank: 1 },
+    { label: "La Plata", names: ["La Plata"], provinces: ["Buenos Aires"], rank: 1 },
+    { label: "Salta", names: ["Salta"], provinces: ["Salta"], rank: 1 },
+    { label: "Tucumán", names: ["San Miguel de Tucumán"], provinces: ["Tucumán"], rank: 1 },
+    { label: "Mar del Plata", names: ["Mar del Plata"], provinces: ["Buenos Aires"], rank: 1 },
+    { label: "Santa Fe", names: ["Santa Fe"], provinces: ["Santa Fe"], rank: 2 },
+    { label: "San Juan", names: ["San Juan"], provinces: ["San Juan"], rank: 2 },
+    { label: "Resistencia", names: ["Resistencia"], provinces: ["Chaco"], rank: 2 },
+    { label: "Corrientes", names: ["Corrientes"], provinces: ["Corrientes"], rank: 2 },
+    { label: "Posadas", names: ["Posadas"], provinces: ["Misiones"], rank: 2 },
+    { label: "Paraná", names: ["Paraná"], provinces: ["Entre Ríos"], rank: 2 },
+    { label: "Neuquén", names: ["Neuquén"], provinces: ["Neuquén"], rank: 2 },
+    { label: "San Luis", names: ["San Luis"], provinces: ["San Luis"], rank: 2 },
+    { label: "La Rioja", names: ["La Rioja"], provinces: ["La Rioja"], rank: 2 },
+    { label: "Catamarca", names: ["San Fernando del Valle de Catamarca"], provinces: ["Catamarca"], rank: 2 },
+    { label: "Santiago del Estero", names: ["Santiago del Estero"], provinces: ["Santiago del Estero"], rank: 2 },
+    { label: "San Salvador de Jujuy", names: ["San Salvador de Jujuy"], provinces: ["Jujuy"], rank: 2 },
+    { label: "Formosa", names: ["Formosa"], provinces: ["Formosa"], rank: 2 },
+    { label: "Santa Rosa", names: ["Santa Rosa"], provinces: ["La Pampa"], rank: 2 },
+    { label: "Viedma", names: ["Viedma"], provinces: ["Río Negro"], rank: 2 },
+    { label: "Rawson", names: ["Rawson"], provinces: ["Chubut"], rank: 2 },
+    { label: "Río Gallegos", names: ["Río Gallegos"], provinces: ["Santa Cruz"], rank: 2 },
+    { label: "Ushuaia", names: ["Ushuaia"], provinces: ["Tierra del Fuego"], rank: 2 },
+    { label: "Bahía Blanca", names: ["Bahía Blanca"], provinces: ["Buenos Aires"], rank: 3 },
+    { label: "Comodoro Rivadavia", names: ["Comodoro Rivadavia"], provinces: ["Chubut"], rank: 3 },
+    { label: "Bariloche", names: ["San Carlos de Bariloche", "Bariloche"], provinces: ["Río Negro"], rank: 3 },
+    { label: "Río Cuarto", names: ["Río Cuarto"], provinces: ["Córdoba"], rank: 3 },
+    { label: "Concordia", names: ["Concordia"], provinces: ["Entre Ríos"], rank: 3 },
+    { label: "Rafaela", names: ["Rafaela"], provinces: ["Santa Fe"], rank: 3 },
+    { label: "Villa María", names: ["Villa María"], provinces: ["Córdoba"], rank: 3 }
+  ];
+
   const state = {
     config: null,
     map: null,
     baseLayers: {},
     activeBaseLayer: null,
+    activeBaseLayerId: "weather",
+    cleanBaseGroup: null,
+    cleanBaseProvinceLayer: null,
+    cleanBaseCityLayer: null,
+    cleanBaseCityMarkers: [],
+    cleanBaseLoaded: false,
     localityCluster: null,
     stationLayer: null,
     localities: [],
@@ -206,6 +251,16 @@
     return response.json();
   }
 
+  async function fetchStaticJson(url) {
+    const response = await fetch(url, { cache: "force-cache" });
+
+    if (!response.ok) {
+      throw new Error(`${response.status} al descargar ${url}`);
+    }
+
+    return response.json();
+  }
+
   async function loadConfig() {
     try {
       state.config = await fetchJson("config/data-sources.json");
@@ -233,6 +288,130 @@
     }
   }
 
+  function cleanBaseUrl() {
+    return (
+      state.config?.clean_basemap?.provinces_url ||
+      CLEAN_BASE_PROVINCES_URL
+    );
+  }
+
+  function cleanBaseProvinceStyle() {
+    return {
+      pane: "cleanBasePane",
+      color: "#aeb7c0",
+      weight: 0.95,
+      opacity: 0.88,
+      fillColor: "#202327",
+      fillOpacity: 1,
+      interactive: false,
+    };
+  }
+
+  async function loadCleanBaseGeometry() {
+    if (state.cleanBaseLoaded || state.cleanBaseProvinceLayer) return;
+
+    try {
+      const payload = await fetchStaticJson(cleanBaseUrl());
+      state.cleanBaseProvinceLayer = L.geoJSON(payload, {
+        pane: "cleanBasePane",
+        interactive: false,
+        style: cleanBaseProvinceStyle,
+      });
+      state.cleanBaseGroup.addLayer(state.cleanBaseProvinceLayer);
+      state.cleanBaseLoaded = true;
+    } catch (error) {
+      console.warn("No se cargaron los límites provinciales del mapa meteorológico.", error);
+      showToast(
+        "El fondo meteorológico seguirá disponible, pero no se pudieron cargar sus límites provinciales."
+      );
+    }
+  }
+
+  function localityMatchesCleanCity(locality, city) {
+    const localityNames = [locality.name, locality.original_name]
+      .filter(Boolean)
+      .map(normalizeText);
+    const requestedNames = city.names.map(normalizeText);
+
+    const nameMatches = requestedNames.some((name) =>
+      localityNames.includes(name)
+    );
+    if (!nameMatches) return false;
+
+    if (!city.provinces?.length) return true;
+    const province = normalizeText(locality.province);
+    return city.provinces
+      .map(normalizeText)
+      .some((candidate) => province === candidate);
+  }
+
+  function cleanBaseCityIcon(city) {
+    return L.divIcon({
+      className: `clean-base-city clean-base-city-rank-${city.rank}`,
+      html: `
+        <span class="clean-base-city-dot"></span>
+        <span class="clean-base-city-name">${escapeHtml(city.label)}</span>
+      `,
+      iconSize: [150, 24],
+      iconAnchor: [5, 12],
+    });
+  }
+
+  function buildCleanBaseCityLabels() {
+    if (!state.cleanBaseCityLayer || !state.localities.length) return;
+
+    state.cleanBaseCityLayer.clearLayers();
+    state.cleanBaseCityMarkers = [];
+
+    for (const city of CLEAN_BASE_CITIES) {
+      const locality = state.localities.find((item) =>
+        localityMatchesCleanCity(item, city)
+      );
+      if (!locality) continue;
+
+      const marker = L.marker([locality.lat, locality.lon], {
+        pane: "cleanBaseLabelsPane",
+        interactive: false,
+        keyboard: false,
+        icon: cleanBaseCityIcon(city),
+      });
+      marker.cleanBaseRank = city.rank;
+      state.cleanBaseCityMarkers.push(marker);
+    }
+
+    updateCleanBaseCityLabels();
+  }
+
+  function maxVisibleCleanBaseRank() {
+    const zoom = state.map?.getZoom() ?? 4;
+    if (zoom < 4.4) return 1;
+    if (zoom < 6.2) return 2;
+    return 3;
+  }
+
+  function updateCleanBaseCityLabels() {
+    if (!state.cleanBaseCityLayer) return;
+
+    const maxRank = maxVisibleCleanBaseRank();
+    const visible = new Set(state.cleanBaseCityLayer.getLayers());
+
+    for (const marker of state.cleanBaseCityMarkers) {
+      const shouldShow = marker.cleanBaseRank <= maxRank;
+      const isVisible = visible.has(marker);
+
+      if (shouldShow && !isVisible) {
+        state.cleanBaseCityLayer.addLayer(marker);
+      } else if (!shouldShow && isVisible) {
+        state.cleanBaseCityLayer.removeLayer(marker);
+      }
+    }
+  }
+
+  function applyBaseMapAppearance(layerId) {
+    const clean = layerId === "weather";
+    state.map.getContainer().classList.toggle("clean-base-active", clean);
+  }
+
   function initializeMap() {
     const initial = state.config.initial_view || {};
     const mobile = window.matchMedia("(max-width: 850px)").matches;
@@ -253,10 +432,22 @@
       worldCopyJump: true,
     });
 
+    state.map.createPane("cleanBasePane");
+    state.map.getPane("cleanBasePane").style.zIndex = "180";
+    state.map.getPane("cleanBasePane").style.pointerEvents = "none";
+
+    state.map.createPane("cleanBaseLabelsPane");
+    state.map.getPane("cleanBaseLabelsPane").style.zIndex = "420";
+    state.map.getPane("cleanBaseLabelsPane").style.pointerEvents = "none";
+
     state.map.createPane("stationPane");
     state.map.getPane("stationPane").style.zIndex = "650";
 
+    state.cleanBaseCityLayer = L.layerGroup();
+    state.cleanBaseGroup = L.layerGroup([state.cleanBaseCityLayer]);
+
     state.baseLayers = {
+      weather: state.cleanBaseGroup,
       light: L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -284,8 +475,13 @@
       ),
     };
 
-    state.activeBaseLayer = state.baseLayers.light;
+    state.activeBaseLayer = state.baseLayers.weather;
+    state.activeBaseLayerId = "weather";
     state.activeBaseLayer.addTo(state.map);
+    applyBaseMapAppearance("weather");
+    void loadCleanBaseGeometry();
+
+    state.map.on("zoomend", updateCleanBaseCityLabels);
 
     state.localityCluster = L.markerClusterGroup({
       chunkedLoading: true,
@@ -858,6 +1054,7 @@
     );
 
     state.localities = normalizeLocalities(localityPayload);
+    buildCleanBaseCityLabels();
 
     const observationPayload = await observationsPromise;
     setLoading(
@@ -929,15 +1126,25 @@
 
   function switchBaseMap(layerId) {
     const next = state.baseLayers[layerId];
-    if (!next || next === state.activeBaseLayer) return;
+    if (!next || layerId === state.activeBaseLayerId) return;
 
-    if (state.activeBaseLayer) {
+    if (state.activeBaseLayer && state.map.hasLayer(state.activeBaseLayer)) {
       state.map.removeLayer(state.activeBaseLayer);
     }
 
     next.addTo(state.map);
-    next.bringToBack();
+    if (typeof next.bringToBack === "function") {
+      next.bringToBack();
+    }
+
     state.activeBaseLayer = next;
+    state.activeBaseLayerId = layerId;
+    applyBaseMapAppearance(layerId);
+
+    if (layerId === "weather") {
+      void loadCleanBaseGeometry();
+      updateCleanBaseCityLabels();
+    }
   }
 
   function toggleLocalities(visible) {
