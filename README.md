@@ -35,8 +35,8 @@ La aplicación no consulta directamente al SMN. Consume los productos ya
 procesados y publicados por ClimateProyectar:
 
 ```text
-https://mtgproyect.github.io/climateproyectar-v2/data/localidades.min.json
-https://mtgproyect.github.io/climate-observations/estaciones.min.json
+https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json
+https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json
 ```
 
 Cada localidad utiliza su campo:
@@ -148,3 +148,17 @@ La prueba local requiere conexión a Internet para descargar mapas y datos.
 - agrupamiento: Leaflet.markercluster;
 - datos meteorológicos: productos derivados del Servicio Meteorológico
   Nacional publicados por ClimateProyectar.
+
+
+## Corrección de fuentes de datos
+
+El mapa consume los JSON directamente desde la rama `main`:
+
+```text
+https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json
+https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json
+```
+
+Esto evita errores `404` cuando GitHub Pages de un repositorio de datos no
+está habilitado o se encuentra temporalmente sin publicar. Los repositorios
+continúan siendo la fuente principal de verdad.

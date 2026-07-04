@@ -2,9 +2,9 @@
   "use strict";
 
   const FALLBACK_LOCALITIES_URL =
-    "https://mtgproyect.github.io/climateproyectar-v2/data/localidades.min.json";
+    "https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json";
   const FALLBACK_OBSERVATIONS_URL =
-    "https://mtgproyect.github.io/climate-observations/estaciones.min.json";
+    "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json";
 
   const state = {
     config: null,
@@ -1095,7 +1095,7 @@
       console.error(error);
       elements.loadingTitle.textContent = "No se pudo cargar el mapa";
       elements.loadingMessage.textContent =
-        `${error.message}. Revisá que los repositorios de datos estén publicados.`;
+        `${error.message}. Revisá que los archivos JSON públicos existan en los repositorios de datos.`;
       elements.loadingProgress.style.width = "100%";
       elements.loadingProgress.style.background = "#dc4a4a";
     }

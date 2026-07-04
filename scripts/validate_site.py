@@ -29,6 +29,8 @@ for key in ("localities_url", "observations_url"):
     value = config.get(key)
     if not isinstance(value, str) or not value.startswith("https://"):
         raise SystemExit(f"Configuración inválida: {key}")
+    if "raw.githubusercontent.com" not in value:
+        raise SystemExit(f"La fuente debe usar raw.githubusercontent.com: {key}")
 
 workflow = (ROOT / ".github/workflows/deploy-pages.yml").read_text(
     encoding="utf-8"
