@@ -6,56 +6,11 @@
   const FALLBACK_OBSERVATIONS_URL =
     "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json";
 
-  const CLEAN_BASE_GEOJSON_URL =
-    "data/meteorological-basemap.geojson";
-
-  const CLEAN_BASE_CITIES = [
-    { label: "Buenos Aires", names: ["Capital Federal", "Ciudad Autónoma de Buenos Aires (CABA)"], rank: 1 },
-    { label: "Córdoba", names: ["Córdoba"], provinces: ["Córdoba"], rank: 1 },
-    { label: "Rosario", names: ["Rosario"], provinces: ["Santa Fe"], rank: 1 },
-    { label: "Mendoza", names: ["Mendoza"], provinces: ["Mendoza"], rank: 1 },
-    { label: "La Plata", names: ["La Plata"], provinces: ["Buenos Aires"], rank: 1 },
-    { label: "Salta", names: ["Salta"], provinces: ["Salta"], rank: 1 },
-    { label: "Tucumán", names: ["San Miguel de Tucumán"], provinces: ["Tucumán"], rank: 1 },
-    { label: "Mar del Plata", names: ["Mar del Plata"], provinces: ["Buenos Aires"], rank: 1 },
-    { label: "Santa Fe", names: ["Santa Fe"], provinces: ["Santa Fe"], rank: 2 },
-    { label: "San Juan", names: ["San Juan"], provinces: ["San Juan"], rank: 2 },
-    { label: "Resistencia", names: ["Resistencia"], provinces: ["Chaco"], rank: 2 },
-    { label: "Corrientes", names: ["Corrientes"], provinces: ["Corrientes"], rank: 2 },
-    { label: "Posadas", names: ["Posadas"], provinces: ["Misiones"], rank: 2 },
-    { label: "Paraná", names: ["Paraná"], provinces: ["Entre Ríos"], rank: 2 },
-    { label: "Neuquén", names: ["Neuquén"], provinces: ["Neuquén"], rank: 2 },
-    { label: "San Luis", names: ["San Luis"], provinces: ["San Luis"], rank: 2 },
-    { label: "La Rioja", names: ["La Rioja"], provinces: ["La Rioja"], rank: 2 },
-    { label: "Catamarca", names: ["San Fernando del Valle de Catamarca"], provinces: ["Catamarca"], rank: 2 },
-    { label: "Santiago del Estero", names: ["Santiago del Estero"], provinces: ["Santiago del Estero"], rank: 2 },
-    { label: "San Salvador de Jujuy", names: ["San Salvador de Jujuy"], provinces: ["Jujuy"], rank: 2 },
-    { label: "Formosa", names: ["Formosa"], provinces: ["Formosa"], rank: 2 },
-    { label: "Santa Rosa", names: ["Santa Rosa"], provinces: ["La Pampa"], rank: 2 },
-    { label: "Viedma", names: ["Viedma"], provinces: ["Río Negro"], rank: 2 },
-    { label: "Rawson", names: ["Rawson"], provinces: ["Chubut"], rank: 2 },
-    { label: "Río Gallegos", names: ["Río Gallegos"], provinces: ["Santa Cruz"], rank: 2 },
-    { label: "Ushuaia", names: ["Ushuaia"], provinces: ["Tierra del Fuego"], rank: 2 },
-    { label: "Bahía Blanca", names: ["Bahía Blanca"], provinces: ["Buenos Aires"], rank: 3 },
-    { label: "Comodoro Rivadavia", names: ["Comodoro Rivadavia"], provinces: ["Chubut"], rank: 3 },
-    { label: "Bariloche", names: ["San Carlos de Bariloche", "Bariloche"], provinces: ["Río Negro"], rank: 3 },
-    { label: "Río Cuarto", names: ["Río Cuarto"], provinces: ["Córdoba"], rank: 3 },
-    { label: "Concordia", names: ["Concordia"], provinces: ["Entre Ríos"], rank: 3 },
-    { label: "Rafaela", names: ["Rafaela"], provinces: ["Santa Fe"], rank: 3 },
-    { label: "Villa María", names: ["Villa María"], provinces: ["Córdoba"], rank: 3 }
-  ];
-
   const state = {
     config: null,
     map: null,
     baseLayers: {},
     activeBaseLayer: null,
-    activeBaseLayerId: "weather",
-    cleanBaseGroup: null,
-    cleanBaseGeometryLayer: null,
-    cleanBaseCityLayer: null,
-    cleanBaseCityMarkers: [],
-    cleanBaseLoaded: false,
     localityCluster: null,
     stationLayer: null,
     localities: [],
@@ -270,214 +225,13 @@
           "4864": "Ciudad Autónoma de Buenos Aires (CABA)",
         },
         initial_view: {
-          center: [-38.5, -64.5],
-          zoom_desktop: 4,
-          zoom_mobile: 3,
+          name: "Área Metropolitana de Buenos Aires (AMBA)",
+          center: [-34.61, -58.55],
+          zoom_desktop: 9,
+          zoom_mobile: 8,
         },
-        default_base_map: "weather",
-        clean_basemap: {
-          geojson_url:
-            "data/meteorological-basemap.geojson",
-          max_zoom: 9,
-        },
+        default_base_map: "light",
       };
-    }
-  }
-
-  function cleanBaseGeoJsonUrl() {
-    return (
-      state.config?.clean_basemap?.geojson_url ||
-      CLEAN_BASE_GEOJSON_URL
-    );
-  }
-
-  function cleanBaseMaximumZoom() {
-    const value = Number(state.config?.clean_basemap?.max_zoom);
-    return Number.isFinite(value) ? value : 9;
-  }
-
-  function cleanBaseFeatureStyle(feature) {
-    const kind = feature?.properties?.kind;
-
-    if (kind === "land") {
-      return {
-        pane: "cleanBasePane",
-        color: "#8a959f",
-        weight: 0.7,
-        opacity: 0.85,
-        fillColor: "#ffffff",
-        fillOpacity: 1,
-      };
-    }
-
-    if (kind === "lake") {
-      return {
-        pane: "cleanBasePane",
-        color: "#a7c4d2",
-        weight: 0.65,
-        opacity: 0.85,
-        fillColor: "#dceff7",
-        fillOpacity: 1,
-      };
-    }
-
-    if (kind === "country") {
-      return {
-        pane: "cleanBasePane",
-        color: "#586570",
-        weight: 1.45,
-        opacity: 0.96,
-        fill: false,
-      };
-    }
-
-    if (kind === "province") {
-      return {
-        pane: "cleanBasePane",
-        color: "#9aa5ae",
-        weight: 0.75,
-        opacity: 0.92,
-        dashArray: "3 2",
-        fill: false,
-      };
-    }
-
-    return {
-      pane: "cleanBasePane",
-      color: "#6f7c86",
-      weight: 1,
-      opacity: 0.9,
-      fill: false,
-    };
-  }
-
-  function createCleanBaseGeometryLayer() {
-    return L.geoJSON(null, {
-      pane: "cleanBasePane",
-      interactive: false,
-      bubblingMouseEvents: false,
-      style: cleanBaseFeatureStyle,
-    });
-  }
-
-  async function loadCleanBaseGeometry() {
-    if (
-      state.cleanBaseLoaded ||
-      !state.cleanBaseGeometryLayer
-    ) {
-      return;
-    }
-
-    const response = await fetch(cleanBaseGeoJsonUrl(), {
-      cache: "force-cache",
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `${response.status} al descargar el mapa meteorológico`
-      );
-    }
-
-    const geojson = await response.json();
-    state.cleanBaseGeometryLayer.addData(geojson);
-    state.cleanBaseLoaded = true;
-  }
-
-  function localityMatchesCleanCity(locality, city) {
-    const localityNames = [locality.name, locality.original_name]
-      .filter(Boolean)
-      .map(normalizeText);
-    const requestedNames = city.names.map(normalizeText);
-
-    const nameMatches = requestedNames.some((name) =>
-      localityNames.includes(name)
-    );
-    if (!nameMatches) return false;
-
-    if (!city.provinces?.length) return true;
-    const province = normalizeText(locality.province);
-    return city.provinces
-      .map(normalizeText)
-      .some((candidate) => province === candidate);
-  }
-
-  function cleanBaseCityIcon(city) {
-    return L.divIcon({
-      className: `clean-base-city clean-base-city-rank-${city.rank}`,
-      html: `
-        <span class="clean-base-city-dot"></span>
-        <span class="clean-base-city-name">${escapeHtml(city.label)}</span>
-      `,
-      iconSize: [150, 24],
-      iconAnchor: [5, 12],
-    });
-  }
-
-  function buildCleanBaseCityLabels() {
-    if (!state.cleanBaseCityLayer || !state.localities.length) return;
-
-    state.cleanBaseCityLayer.clearLayers();
-    state.cleanBaseCityMarkers = [];
-
-    for (const city of CLEAN_BASE_CITIES) {
-      const locality = state.localities.find((item) =>
-        localityMatchesCleanCity(item, city)
-      );
-      if (!locality) continue;
-
-      const marker = L.marker([locality.lat, locality.lon], {
-        pane: "cleanBaseLabelsPane",
-        interactive: false,
-        keyboard: false,
-        icon: cleanBaseCityIcon(city),
-      });
-      marker.cleanBaseRank = city.rank;
-      state.cleanBaseCityMarkers.push(marker);
-    }
-
-    updateCleanBaseCityLabels();
-  }
-
-  function maxVisibleCleanBaseRank() {
-    const zoom = state.map?.getZoom() ?? 4;
-    if (zoom < 4.4) return 1;
-    if (zoom < 6.2) return 2;
-    return 3;
-  }
-
-  function updateCleanBaseCityLabels() {
-    if (!state.cleanBaseCityLayer) return;
-
-    const maxRank = maxVisibleCleanBaseRank();
-    const visible = new Set(state.cleanBaseCityLayer.getLayers());
-
-    for (const marker of state.cleanBaseCityMarkers) {
-      const shouldShow = marker.cleanBaseRank <= maxRank;
-      const isVisible = visible.has(marker);
-
-      if (shouldShow && !isVisible) {
-        state.cleanBaseCityLayer.addLayer(marker);
-      } else if (!shouldShow && isVisible) {
-        state.cleanBaseCityLayer.removeLayer(marker);
-      }
-    }
-  }
-
-  function applyBaseMapAppearance(layerId) {
-    const clean = layerId === "weather";
-    state.map.getContainer().classList.toggle(
-      "clean-base-active",
-      clean
-    );
-
-    const maximumZoom = clean
-      ? cleanBaseMaximumZoom()
-      : 18;
-
-    state.map.setMaxZoom(maximumZoom);
-
-    if (state.map.getZoom() > maximumZoom) {
-      state.map.setZoom(maximumZoom);
     }
   }
 
@@ -486,42 +240,25 @@
     const mobile = window.matchMedia("(max-width: 850px)").matches;
     const center = Array.isArray(initial.center)
       ? initial.center
-      : [-38.5, -64.5];
+      : [-34.61, -58.55];
     const zoom = mobile
-      ? Number(initial.zoom_mobile ?? 3)
-      : Number(initial.zoom_desktop ?? 4);
+      ? Number(initial.zoom_mobile ?? 8)
+      : Number(initial.zoom_desktop ?? 9);
 
     state.map = L.map("map", {
       center,
       zoom,
       zoomControl: true,
       minZoom: 2,
-      maxZoom: cleanBaseMaximumZoom(),
+      maxZoom: 18,
       preferCanvas: true,
       worldCopyJump: true,
     });
 
-    state.map.createPane("cleanBasePane");
-    state.map.getPane("cleanBasePane").style.zIndex = "180";
-    state.map.getPane("cleanBasePane").style.pointerEvents = "none";
-
-    state.map.createPane("cleanBaseLabelsPane");
-    state.map.getPane("cleanBaseLabelsPane").style.zIndex = "420";
-    state.map.getPane("cleanBaseLabelsPane").style.pointerEvents = "none";
-
     state.map.createPane("stationPane");
     state.map.getPane("stationPane").style.zIndex = "650";
 
-    state.cleanBaseGeometryLayer =
-      createCleanBaseGeometryLayer();
-    state.cleanBaseCityLayer = L.layerGroup();
-    state.cleanBaseGroup = L.layerGroup([
-      state.cleanBaseGeometryLayer,
-      state.cleanBaseCityLayer,
-    ]);
-
     state.baseLayers = {
-      weather: state.cleanBaseGroup,
       light: L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -549,18 +286,16 @@
       ),
     };
 
-    state.activeBaseLayer = state.baseLayers.weather;
-    state.activeBaseLayerId = "weather";
-    state.activeBaseLayer.addTo(state.map);
-    applyBaseMapAppearance("weather");
-    void loadCleanBaseGeometry().catch((error) => {
-      console.error(error);
-      showToast(
-        "No se pudo cargar la cartografía meteorológica."
-      );
-    });
+    const initialBaseMap =
+      state.config.default_base_map === "dark"
+        ? "dark"
+        : state.config.default_base_map === "terrain"
+          ? "terrain"
+          : "light";
 
-    state.map.on("zoomend", updateCleanBaseCityLabels);
+    state.activeBaseLayer = state.baseLayers[initialBaseMap];
+    state.activeBaseLayer.addTo(state.map);
+    elements.baseMapSelect.value = initialBaseMap;
 
     state.localityCluster = L.markerClusterGroup({
       chunkedLoading: true,
@@ -1133,7 +868,6 @@
     );
 
     state.localities = normalizeLocalities(localityPayload);
-    buildCleanBaseCityLabels();
 
     const observationPayload = await observationsPromise;
     setLoading(
@@ -1205,24 +939,15 @@
 
   function switchBaseMap(layerId) {
     const next = state.baseLayers[layerId];
-    if (!next || layerId === state.activeBaseLayerId) return;
+    if (!next || next === state.activeBaseLayer) return;
 
-    if (state.activeBaseLayer && state.map.hasLayer(state.activeBaseLayer)) {
+    if (state.activeBaseLayer) {
       state.map.removeLayer(state.activeBaseLayer);
     }
 
     next.addTo(state.map);
-    if (typeof next.bringToBack === "function") {
-      next.bringToBack();
-    }
-
+    next.bringToBack();
     state.activeBaseLayer = next;
-    state.activeBaseLayerId = layerId;
-    applyBaseMapAppearance(layerId);
-
-    if (layerId === "weather") {
-        updateCleanBaseCityLabels();
-    }
   }
 
   function toggleLocalities(visible) {
