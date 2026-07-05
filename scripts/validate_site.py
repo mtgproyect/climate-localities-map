@@ -13,6 +13,7 @@ required = [
     DOCS / "assets/css/app.css",
     DOCS / "assets/js/app.js",
     DOCS / "config/data-sources.json",
+    DOCS / "data/meteorological-basemap.geojson",
     DOCS / "favicon.svg",
     DOCS / ".nojekyll",
 ]
@@ -31,6 +32,45 @@ for key in ("localities_url", "observations_url"):
         raise SystemExit(f"Configuración inválida: {key}")
     if "raw.githubusercontent.com" not in value:
         raise SystemExit(f"La fuente debe usar raw.githubusercontent.com: {key}")
+
+
+clean_basemap = config.get("clean_basemap", {})
+geojson_url = clean_basemap.get("geojson_url")
+if geojson_url != "data/meteorological-basemap.geojson":
+    raise SystemExit(
+        "Configuración inválida: clean_basemap.geojson_url"
+    )
+
+max_zoom = clean_basemap.get("max_zoom")
+if not isinstance(max_zoom, int) or not 5 <= max_zoom <= 12:
+    raise SystemExit(
+        "Configuración inválida: clean_basemap.max_zoom"
+    )
+
+basemap = json.loads(
+    (DOCS / geojson_url).read_text(encoding="utf-8")
+)
+if basemap.get("type") != "FeatureCollection":
+    raise SystemExit("Mapa meteorológico GeoJSON inválido.")
+
+features = basemap.get("features", [])
+if len(features) < 50:
+    raise SystemExit("Mapa meteorológico incompleto.")
+
+kinds = {
+    feature.get("properties", {}).get("kind")
+    for feature in features
+}
+for required_kind in (
+    "land",
+    "country",
+    "province",
+    "coast",
+):
+    if required_kind not in kinds:
+        raise SystemExit(
+            f"Mapa meteorológico sin capa {required_kind}"
+        )
 
 workflow = (ROOT / ".github/workflows/deploy-pages.yml").read_text(
     encoding="utf-8"
@@ -54,6 +94,11 @@ for expected in (
     "markerClusterGroup",
     "localidades.min.json",
     "estaciones.min.json",
+    "CLEAN_BASE_GEOJSON_URL",
+    "cleanBaseGeometryLayer",
+    "loadCleanBaseGeometry",
+    "cleanBaseGroup",
+    "clean-base-active",
 ):
     if expected not in javascript:
         raise SystemExit(f"app.js no contiene {expected}")
