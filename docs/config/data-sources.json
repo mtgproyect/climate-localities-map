@@ -1,17 +1,18 @@
 {
-  "schema_version": 4,
+  "schema_version": 2,
   "localities_url": "https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json",
   "observations_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json",
   "observations_manifest_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/manifiesto.json",
   "refresh_interval_ms": 600000,
   "stale_after_minutes": 90,
   "initial_view": {
+    "name": "Área Metropolitana de Buenos Aires (AMBA)",
     "center": [
-      -38.5,
-      -64.5
+      -34.61,
+      -58.55
     ],
-    "zoom_desktop": 4,
-    "zoom_mobile": 3
+    "zoom_desktop": 9,
+    "zoom_mobile": 8
   },
   "station_aliases": {
     "87412": "87420",
@@ -22,10 +23,5 @@
     "4864": "Ciudad Autónoma de Buenos Aires (CABA)"
   },
   "source_strategy": "Archivos JSON públicos leídos directamente desde la rama main para no depender de que GitHub Pages esté habilitado en los repositorios de datos.",
-  "default_base_map": "weather",
-  "clean_basemap": {
-    "geojson_url": "data/meteorological-basemap.geojson",
-    "max_zoom": 9,
-    "description": "Mapa meteorológico claro, sin calles, con límites nacionales y provinciales y localidades principales."
-  }
+  "default_base_map": "light"
 }
