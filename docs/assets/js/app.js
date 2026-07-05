@@ -6,8 +6,8 @@
   const FALLBACK_OBSERVATIONS_URL =
     "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json";
 
-  const CLEAN_BASE_PROVINCES_URL =
-    "https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson";
+  const CLEAN_BASE_GEOJSON_URL =
+    "data/meteorological-basemap.geojson";
 
   const CLEAN_BASE_CITIES = [
     { label: "Buenos Aires", names: ["Capital Federal", "Ciudad Autónoma de Buenos Aires (CABA)"], rank: 1 },
@@ -52,7 +52,7 @@
     activeBaseLayer: null,
     activeBaseLayerId: "weather",
     cleanBaseGroup: null,
-    cleanBaseProvinceLayer: null,
+    cleanBaseGeometryLayer: null,
     cleanBaseCityLayer: null,
     cleanBaseCityMarkers: [],
     cleanBaseLoaded: false,
@@ -251,16 +251,6 @@
     return response.json();
   }
 
-  async function fetchStaticJson(url) {
-    const response = await fetch(url, { cache: "force-cache" });
-
-    if (!response.ok) {
-      throw new Error(`${response.status} al descargar ${url}`);
-    }
-
-    return response.json();
-  }
-
   async function loadConfig() {
     try {
       state.config = await fetchJson("config/data-sources.json");
@@ -284,47 +274,113 @@
           zoom_desktop: 4,
           zoom_mobile: 3,
         },
+        default_base_map: "weather",
+        clean_basemap: {
+          geojson_url:
+            "data/meteorological-basemap.geojson",
+          max_zoom: 9,
+        },
       };
     }
   }
 
-  function cleanBaseUrl() {
+  function cleanBaseGeoJsonUrl() {
     return (
-      state.config?.clean_basemap?.provinces_url ||
-      CLEAN_BASE_PROVINCES_URL
+      state.config?.clean_basemap?.geojson_url ||
+      CLEAN_BASE_GEOJSON_URL
     );
   }
 
-  function cleanBaseProvinceStyle() {
+  function cleanBaseMaximumZoom() {
+    const value = Number(state.config?.clean_basemap?.max_zoom);
+    return Number.isFinite(value) ? value : 9;
+  }
+
+  function cleanBaseFeatureStyle(feature) {
+    const kind = feature?.properties?.kind;
+
+    if (kind === "land") {
+      return {
+        pane: "cleanBasePane",
+        color: "#8a959f",
+        weight: 0.7,
+        opacity: 0.85,
+        fillColor: "#ffffff",
+        fillOpacity: 1,
+      };
+    }
+
+    if (kind === "lake") {
+      return {
+        pane: "cleanBasePane",
+        color: "#a7c4d2",
+        weight: 0.65,
+        opacity: 0.85,
+        fillColor: "#dceff7",
+        fillOpacity: 1,
+      };
+    }
+
+    if (kind === "country") {
+      return {
+        pane: "cleanBasePane",
+        color: "#586570",
+        weight: 1.45,
+        opacity: 0.96,
+        fill: false,
+      };
+    }
+
+    if (kind === "province") {
+      return {
+        pane: "cleanBasePane",
+        color: "#9aa5ae",
+        weight: 0.75,
+        opacity: 0.92,
+        dashArray: "3 2",
+        fill: false,
+      };
+    }
+
     return {
       pane: "cleanBasePane",
-      color: "#aeb7c0",
-      weight: 0.95,
-      opacity: 0.88,
-      fillColor: "#202327",
-      fillOpacity: 1,
-      interactive: false,
+      color: "#6f7c86",
+      weight: 1,
+      opacity: 0.9,
+      fill: false,
     };
   }
 
-  async function loadCleanBaseGeometry() {
-    if (state.cleanBaseLoaded || state.cleanBaseProvinceLayer) return;
+  function createCleanBaseGeometryLayer() {
+    return L.geoJSON(null, {
+      pane: "cleanBasePane",
+      interactive: false,
+      bubblingMouseEvents: false,
+      style: cleanBaseFeatureStyle,
+    });
+  }
 
-    try {
-      const payload = await fetchStaticJson(cleanBaseUrl());
-      state.cleanBaseProvinceLayer = L.geoJSON(payload, {
-        pane: "cleanBasePane",
-        interactive: false,
-        style: cleanBaseProvinceStyle,
-      });
-      state.cleanBaseGroup.addLayer(state.cleanBaseProvinceLayer);
-      state.cleanBaseLoaded = true;
-    } catch (error) {
-      console.warn("No se cargaron los límites provinciales del mapa meteorológico.", error);
-      showToast(
-        "El fondo meteorológico seguirá disponible, pero no se pudieron cargar sus límites provinciales."
+  async function loadCleanBaseGeometry() {
+    if (
+      state.cleanBaseLoaded ||
+      !state.cleanBaseGeometryLayer
+    ) {
+      return;
+    }
+
+    const response = await fetch(cleanBaseGeoJsonUrl(), {
+      cache: "force-cache",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `${response.status} al descargar el mapa meteorológico`
       );
     }
+
+    const geojson = await response.json();
+    state.cleanBaseGeometryLayer.addData(geojson);
+    state.cleanBaseLoaded = true;
   }
 
   function localityMatchesCleanCity(locality, city) {
@@ -409,7 +465,20 @@
 
   function applyBaseMapAppearance(layerId) {
     const clean = layerId === "weather";
-    state.map.getContainer().classList.toggle("clean-base-active", clean);
+    state.map.getContainer().classList.toggle(
+      "clean-base-active",
+      clean
+    );
+
+    const maximumZoom = clean
+      ? cleanBaseMaximumZoom()
+      : 18;
+
+    state.map.setMaxZoom(maximumZoom);
+
+    if (state.map.getZoom() > maximumZoom) {
+      state.map.setZoom(maximumZoom);
+    }
   }
 
   function initializeMap() {
@@ -427,7 +496,7 @@
       zoom,
       zoomControl: true,
       minZoom: 2,
-      maxZoom: 18,
+      maxZoom: cleanBaseMaximumZoom(),
       preferCanvas: true,
       worldCopyJump: true,
     });
@@ -443,8 +512,13 @@
     state.map.createPane("stationPane");
     state.map.getPane("stationPane").style.zIndex = "650";
 
+    state.cleanBaseGeometryLayer =
+      createCleanBaseGeometryLayer();
     state.cleanBaseCityLayer = L.layerGroup();
-    state.cleanBaseGroup = L.layerGroup([state.cleanBaseCityLayer]);
+    state.cleanBaseGroup = L.layerGroup([
+      state.cleanBaseGeometryLayer,
+      state.cleanBaseCityLayer,
+    ]);
 
     state.baseLayers = {
       weather: state.cleanBaseGroup,
@@ -479,7 +553,12 @@
     state.activeBaseLayerId = "weather";
     state.activeBaseLayer.addTo(state.map);
     applyBaseMapAppearance("weather");
-    void loadCleanBaseGeometry();
+    void loadCleanBaseGeometry().catch((error) => {
+      console.error(error);
+      showToast(
+        "No se pudo cargar la cartografía meteorológica."
+      );
+    });
 
     state.map.on("zoomend", updateCleanBaseCityLabels);
 
@@ -1142,8 +1221,7 @@
     applyBaseMapAppearance(layerId);
 
     if (layerId === "weather") {
-      void loadCleanBaseGeometry();
-      updateCleanBaseCityLabels();
+        updateCleanBaseCityLabels();
     }
   }
 
