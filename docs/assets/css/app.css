@@ -982,10 +982,9 @@ select:focus {
   }
 }
 
-/* Mapa base meteorológico liviano */
+/* Mapa base meteorológico claro y sin calles */
 #map.clean-base-active {
-  background:
-    radial-gradient(circle at 50% 42%, #171b20 0%, #0c1117 54%, #05080d 100%);
+  background: #dceff7;
 }
 
 #map.clean-base-active .leaflet-tile-pane {
@@ -993,8 +992,8 @@ select:focus {
 }
 
 #map.clean-base-active .leaflet-control-attribution {
-  background: rgba(5, 8, 13, 0.84) !important;
-  color: #9aa6b1;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #53616c;
 }
 
 .clean-base-city {
@@ -1004,16 +1003,16 @@ select:focus {
   width: auto !important;
   border: 0 !important;
   background: transparent !important;
-  color: #f5f8fb;
+  color: #26333d;
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 700;
   line-height: 1.05;
   text-shadow:
-    -1px -1px 0 rgba(0, 0, 0, 0.94),
-    1px -1px 0 rgba(0, 0, 0, 0.94),
-    -1px 1px 0 rgba(0, 0, 0, 0.94),
-    1px 1px 0 rgba(0, 0, 0, 0.94),
-    0 2px 4px rgba(0, 0, 0, 0.95);
+    -1px -1px 0 rgba(255, 255, 255, 0.96),
+    1px -1px 0 rgba(255, 255, 255, 0.96),
+    -1px 1px 0 rgba(255, 255, 255, 0.96),
+    1px 1px 0 rgba(255, 255, 255, 0.96),
+    0 2px 3px rgba(255, 255, 255, 0.95);
   white-space: nowrap;
 }
 
@@ -1021,27 +1020,27 @@ select:focus {
   width: 5px;
   height: 5px;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.95);
+  border: 1px solid #ffffff;
   border-radius: 50%;
-  background: #dce5eb;
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.46);
+  background: #4f5d67;
+  box-shadow: 0 0 0 1px rgba(49, 60, 69, 0.28);
 }
 
 .clean-base-city-rank-1 {
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .clean-base-city-rank-1 .clean-base-city-dot {
   width: 7px;
   height: 7px;
-  background: #ffffff;
+  background: #273640;
 }
 
 .clean-base-city-rank-3 {
-  color: #cbd4db;
+  color: #58656e;
   font-size: 10px;
-  font-weight: 560;
+  font-weight: 650;
 }
 
 @media (max-width: 850px) {
