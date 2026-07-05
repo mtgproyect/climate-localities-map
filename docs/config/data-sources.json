@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 4,
   "localities_url": "https://raw.githubusercontent.com/mtgproyect/climateproyectar-v2/main/docs/data/localidades.min.json",
   "observations_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/estaciones.min.json",
   "observations_manifest_url": "https://raw.githubusercontent.com/mtgproyect/climate-observations/main/docs/manifiesto.json",
@@ -24,7 +24,8 @@
   "source_strategy": "Archivos JSON públicos leídos directamente desde la rama main para no depender de que GitHub Pages esté habilitado en los repositorios de datos.",
   "default_base_map": "weather",
   "clean_basemap": {
-    "provinces_url": "https://apis.datos.gob.ar/georef/api/v2.0/provincias.geojson",
-    "description": "Fondo meteorológico sin calles, con límites provinciales y ciudades principales."
+    "geojson_url": "data/meteorological-basemap.geojson",
+    "max_zoom": 9,
+    "description": "Mapa meteorológico claro, sin calles, con límites nacionales y provinciales y localidades principales."
   }
 }
