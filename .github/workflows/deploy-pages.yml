@@ -39,7 +39,7 @@ jobs:
           path: docs
 
   deploy:
-    name: Publicar GitHub Pages
+    name: Publicar GitHub Pages y Cloudflare Pages
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -49,6 +49,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Publicar
+      - name: Publicar GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Disparar deploy en Cloudflare Pages
+        env:
+          CLOUDFLARE_PAGES_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CLOUDFLARE_PAGES_DEPLOY_HOOK" ]; then
+            echo "Falta el secret CLOUDFLARE_PAGES_DEPLOY_HOOK."
+            exit 1
+          fi
+
+          curl -X POST "$CLOUDFLARE_PAGES_DEPLOY_HOOK"
+
+          echo "Deploy de Cloudflare Pages disparado correctamente."
