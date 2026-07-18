@@ -49,7 +49,7 @@
         "description": "Explorá el mapa del clima en Argentina con 10.601 localidades, estaciones meteorológicas, temperatura actual y filtros por provincia con datos públicos del SMN.",
         "inLanguage": "es-AR",
         "isPartOf": {
-          "@id": "https://weathervar.com/#website"
+          "@id": "https://www.weathervar.com/#website"
         },
         "about": [
           {
@@ -78,25 +78,25 @@
           "priceCurrency": "USD"
         },
         "publisher": {
-          "@id": "https://weathervar.com/#organization"
+          "@id": "https://www.weathervar.com/#organization"
         }
       },
       {
         "@type": "WebSite",
-        "@id": "https://weathervar.com/#website",
+        "@id": "https://www.weathervar.com/#website",
         "name": "WeatherVar",
         "alternateName": "WeatherVar Argentina",
-        "url": "https://weathervar.com/",
+        "url": "https://www.weathervar.com/",
         "inLanguage": "es-AR",
         "publisher": {
-          "@id": "https://weathervar.com/#organization"
+          "@id": "https://www.weathervar.com/#organization"
         }
       },
       {
         "@type": "Organization",
-        "@id": "https://weathervar.com/#organization",
+        "@id": "https://www.weathervar.com/#organization",
         "name": "WeatherVar",
-        "url": "https://weathervar.com/",
+        "url": "https://www.weathervar.com/",
         "logo": {
           "@type": "ImageObject",
           "url": "https://www.weathervar.com/assets/img/og-weatherVar.png",
@@ -112,7 +112,7 @@
             "@type": "ListItem",
             "position": 1,
             "name": "WeatherVar",
-            "item": "https://weathervar.com/"
+            "item": "https://www.weathervar.com/"
           },
           {
             "@type": "ListItem",
@@ -141,7 +141,7 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
   >
-  <link rel="stylesheet" href="assets/css/app.css?v=20260717-seo">
+  <link rel="stylesheet" href="assets/css/app.css?v=20260718-interlink">
   <style>
     .sr-only {
       position: absolute !important;
@@ -162,15 +162,18 @@
     <div id="map" aria-label="Mapa meteorológico de localidades argentinas"></div>
 
     <header class="topbar">
-      <div class="brand">
+      <a class="brand" href="https://www.weathervar.com/" aria-label="Ir a WeatherVar">
         <span class="brand-mark" aria-hidden="true">☀</span>
         <div>
           <strong>WeatherVar Clima Mapa Nacional</strong>
           <small>WeatherVar · Observaciones actuales</small>
         </div>
-      </div>
+      </a>
+
+      <nav class="wv-network-nav" aria-label="Navegación WeatherVar"><a href="https://www.weathervar.com/">Inicio</a><a href="https://www.weathervar.com/">Pronóstico Argentina</a><a href="https://mapa.weathervar.com/" aria-current="page">Clima Mapa Nacional</a><a href="https://mundo.weathervar.com/">Mundo WeatherVar</a></nav>
 
       <div class="header-actions">
+        <a class="wv-home-pill mobile-only" href="https://www.weathervar.com/" aria-label="Ir al inicio de WeatherVar">Inicio</a>
         <button id="locate-button" class="round-button" type="button" title="Usar mi ubicación" aria-label="Usar mi ubicación">
           ⌖
         </button>
@@ -307,7 +310,7 @@
       <footer>
         WeatherVar es un sitio independiente. Datos meteorológicos basados en fuentes públicas oficiales, incluyendo el Servicio Meteorológico Nacional. Cartografía © OpenStreetMap.
         <br>
-        <a href="https://weathervar.com/" target="_blank" rel="noopener noreferrer">Inicio WeatherVar</a>
+        <a href="https://www.weathervar.com/" target="_blank" rel="noopener noreferrer">Inicio WeatherVar</a>
       </footer>
     </aside>
 
